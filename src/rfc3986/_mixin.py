@@ -72,7 +72,7 @@ class URIMixin:
         return matches
 
     def _match_subauthority(self) -> t.Optional[t.Match[str]]:
-        return misc.SUBAUTHORITY_MATCHER.match(self.authority)
+        return misc.SUBAUTHORITY_MATCHER.fullmatch(self.authority)
 
     @property
     def _validator(self) -> validators.Validator:

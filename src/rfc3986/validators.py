@@ -291,10 +291,10 @@ def is_valid(
         Whether or not the value is required.
     """
     if require:
-        return value is not None and bool(matcher.match(value))
+        return value is not None and bool(matcher.fullmatch(value))
 
     # require is False and value is not None
-    return value is None or bool(matcher.match(value))
+    return value is None or bool(matcher.fullmatch(value))
 
 
 def authority_is_valid(

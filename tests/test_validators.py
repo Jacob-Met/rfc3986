@@ -335,3 +335,27 @@ def test_standalone_path_validation_keeps_generic_component_semantics():
         )
         is False
     )
+
+
+@pytest.mark.parametrize(
+    "parse", [rfc3986.uri_reference, rfc3986.iri_reference]
+)
+@pytest.mark.parametrize("authority", ["example.com\n", "example.com:80\n"])
+def test_authority_trailing_linefeed_cannot_validate(parse, authority):
+    """A terminal LF must not be ignored when parsing an authority."""
+    uri = parse("https://" + authority + "/path")
+    assert uri.authority == authority
+    with pytest.raises(exceptions.InvalidAuthority):
+        uri.authority_info()
+    assert uri.host is None
+    assert not uri.is_valid()
+    validator = validators.Validator().check_validity_of("host")
+    with pytest.raises(exceptions.InvalidComponentsError):
+        validator.validate(uri)
+
+
+def test_authority_linefeed_rejection_does_not_reject_encoded_path():
+    """Percent-encoded newlines in URI paths remain legal."""
+    uri = rfc3986.uri_reference("https://example.com/path%0A")
+    assert uri.is_valid()
+    assert uri.host == "example.com"
