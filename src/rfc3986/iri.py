@@ -84,7 +84,7 @@ class IRIReference(misc.URIReferenceBase, uri.URIMixin):
         return tuple(self) == tuple(other_ref)
 
     def _match_subauthority(self) -> t.Optional[t.Match[str]]:
-        return misc.ISUBAUTHORITY_MATCHER.match(self.authority)
+        return misc.ISUBAUTHORITY_MATCHER.fullmatch(self.authority)
 
     @classmethod
     def from_string(
