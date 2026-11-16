@@ -2,6 +2,7 @@ import pytest
 
 from rfc3986.exceptions import InvalidAuthority
 from rfc3986.exceptions import ResolutionError
+from rfc3986.iri import IRIReference
 from rfc3986.misc import URI_MATCHER
 from rfc3986.uri import URIReference
 
@@ -504,3 +505,16 @@ def test_uri_paths_reject_authority_and_path_shape_mismatch():
     assert URIReference(None, None, "//evil", None, None).is_valid() is False
     assert URIReference("foo", None, "foo:bar", None, None).is_valid() is True
     assert URIReference("foo", "host", "/path", None, None).is_valid() is True
+
+
+@pytest.mark.parametrize(
+    "parse", [URIReference.from_string, IRIReference.from_string]
+)
+@pytest.mark.parametrize("authority", ["example.com\n", "example.com:80\n"])
+def test_absolute_reference_rejects_trailing_authority_linefeed(
+    parse, authority
+):
+    """Absolute URI grammar must not ignore a final line feed."""
+    value = parse("https://" + authority)
+    assert not value.is_valid()
+    assert not value.is_absolute()

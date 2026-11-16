@@ -119,7 +119,9 @@ class URIMixin:
         :returns: ``True`` if it is an absolute URI, ``False`` otherwise.
         :rtype: bool
         """
-        return bool(misc.ABSOLUTE_URI_MATCHER.match(self.unsplit()))
+        return bool(misc.ABSOLUTE_URI_MATCHER.fullmatch(self.unsplit())) and (
+            validators.uri_is_valid(self, require_scheme=True)
+        )
 
     def is_valid(self, **kwargs: bool) -> bool:
         """Determine if the URI is valid.
