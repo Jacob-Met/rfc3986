@@ -193,3 +193,52 @@ def test_bytes_without_authority_roundtrip(reference):
     parsed = pr.ParseResultBytes.from_string(reference)
     assert parsed.authority is None
     assert parsed.unsplit() == reference
+
+
+@pytest.mark.parametrize(
+    "reference", ["file:///home", "file://", "//", "foo://?q"]
+)
+def test_parseresults_with_empty_authority_roundtrip(reference):
+    as_text = pr.ParseResult.from_string(reference)
+    as_bytes = pr.ParseResultBytes.from_string(reference)
+    assert as_text.reference.authority == ""
+    assert as_bytes.reference.authority == ""
+    assert as_text.unsplit() == reference
+    assert as_bytes.unsplit() == reference.encode()
+
+
+def test_parseresult_from_parts_without_authority_stays_absent():
+    assert (
+        pr.ParseResult.from_parts(scheme="file", path="/home").unsplit()
+        == "file:/home"
+    )
+    assert (
+        pr.ParseResultBytes.from_parts(scheme="file", path="/home").unsplit()
+        == b"file:/home"
+    )
+
+
+def test_parseresult_from_parts_with_explicitly_empty_host():
+    assert (
+        pr.ParseResult.from_parts(
+            scheme="file", host="", path="/home"
+        ).unsplit()
+        == "file:///home"
+    )
+    assert (
+        pr.ParseResultBytes.from_parts(
+            scheme="file", host="", path="/home"
+        ).unsplit()
+        == b"file:///home"
+    )
+
+
+def test_copy_with_host_removed_does_not_invent_empty_authority():
+    original = pr.ParseResult.from_string("foo://example.com/a")
+    changed = original.copy_with(host=None)
+    assert changed.reference.authority is None
+    assert changed.unsplit() == "foo:/a"
+    original_bytes = pr.ParseResultBytes.from_string(b"foo://example.com/a")
+    changed_bytes = original_bytes.copy_with(host=None)
+    assert changed_bytes.reference.authority is None
+    assert changed_bytes.unsplit() == b"foo:/a"

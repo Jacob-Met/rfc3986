@@ -57,6 +57,8 @@ class ParseResultMixin(t.Generic[t.AnyStr]):
             attributes[p] for p in ("userinfo", "host", "port")
         )
         if self.userinfo != userinfo or self.host != host or self.port != port:
+            if userinfo is None and host is None and port is None:
+                return None
             if port:
                 port = f"{port}"
             return normalizers.normalize_authority(
@@ -158,7 +160,11 @@ class ParseResult(
             authority += f":{port}"
         uri_ref = uri.URIReference(
             scheme=scheme,
-            authority=authority,
+            authority=(
+                authority
+                if any(part is not None for part in (userinfo, host, port))
+                else None
+            ),
             path=path,
             query=query,
             fragment=fragment,
@@ -344,7 +350,11 @@ class ParseResultBytes(
             authority += f":{int(port)}"
         uri_ref = uri.URIReference(
             scheme=scheme,
-            authority=authority,
+            authority=(
+                authority
+                if any(part is not None for part in (userinfo, host, port))
+                else None
+            ),
             path=path,
             query=query,
             fragment=fragment,

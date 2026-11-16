@@ -340,3 +340,20 @@ def test_extend_query_with_preserves_blank_values(
     """Extending a URI must not discard existing flag or blank parameters."""
     result = builder.URIBuilder(query=query).extend_query_with(extend_with)
     assert result.query == expected
+
+
+def test_builder_preserves_explicitly_empty_host():
+    assert (
+        builder.URIBuilder(scheme="file", host="", path="/home").geturl()
+        == "file:///home"
+    )
+    assert (
+        builder.URIBuilder.from_uri("file:///home").geturl() == "file:///home"
+    )
+
+
+def test_builder_without_host_does_not_invent_authority():
+    assert (
+        builder.URIBuilder(scheme="file", path="/home").geturl()
+        == "file:/home"
+    )

@@ -98,10 +98,13 @@ class URIBuilder:
         """
         if not isinstance(reference, uri.URIReference):
             reference = uri_reference(reference)
+        host = reference.host
+        if reference.authority == "" and host is None:
+            host = ""
         return cls(
             scheme=reference.scheme,
             userinfo=reference.userinfo,
-            host=reference.host,
+            host=host,
             port=reference.port,
             path=reference.path,
             query=reference.query,
@@ -388,11 +391,16 @@ class URIBuilder:
             'https://sigmavirus24:not-re%40l@github.com/sigmavirus24/rfc3986'
 
         """
+        authority = None
+        if any(
+            part is not None for part in (self.userinfo, self.host, self.port)
+        ):
+            authority = normalizers.normalize_authority(
+                (self.userinfo, self.host, self.port)
+            )
         return uri.URIReference(
             self.scheme,
-            normalizers.normalize_authority(
-                (self.userinfo, self.host, self.port)
-            ),
+            authority,
             self.path,
             self.query,
             self.fragment,

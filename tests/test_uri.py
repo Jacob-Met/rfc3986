@@ -433,3 +433,22 @@ def test_resolve_dot_segments_cannot_create_authority():
     reparsed = URIReference.from_string(resolved.unsplit())
     assert reparsed.authority is None
     assert reparsed.path == resolved.path
+
+
+@pytest.mark.parametrize(
+    "reference",
+    [
+        "foo:///",
+        "file:///etc/passwd",
+        "file://",
+        "file://?q",
+        "//",
+        "foo://?q",
+    ],
+)
+def test_explicitly_empty_authority_roundtrips(reference):
+    """A present but empty authority is different from no authority."""
+    parsed = URIReference.from_string(reference)
+    assert parsed.authority == ""
+    assert parsed.unsplit() == reference
+    assert parsed.normalize().unsplit() == reference
