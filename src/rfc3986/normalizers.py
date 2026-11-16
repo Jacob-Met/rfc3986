@@ -71,7 +71,13 @@ def normalize_host(host: str) -> str:
             # Don't normalize the casing of the Zone ID
             return host[:percent].lower() + host[percent:]
 
-    return host.lower()
+    if "%" not in host:
+        return host.lower()
+    # Hostnames are case-insensitive, but percent triplet hex digits must
+    # remain upper-case; decode unreserved escapes before lower-casing.
+    return normalize_percent_characters(
+        normalize_percent_characters(host).lower()
+    )
 
 
 def normalize_path(path: str, authority_present: bool = True) -> str:
@@ -127,15 +133,20 @@ PERCENT_MATCHER = re.compile("%[A-Fa-f0-9]{2}")
 
 
 def normalize_percent_characters(s: str) -> str:
-    """All percent characters should be upper-cased.
+    """Decode unreserved escapes and uppercase reserved escapes (RFC 3986).
 
-    For example, ``"%3afoo%DF%ab"`` should be turned into ``"%3Afoo%DF%AB"``.
+    Decoding an encoded reserved character changes URI syntax and is unsafe;
+    only ALPHA, DIGIT, hyphen, dot, underscore and tilde may be decoded.
     """
-    matches = set(PERCENT_MATCHER.findall(s))
-    for m in matches:
-        if not m.isupper():
-            s = s.replace(m, m.upper())
-    return s
+
+    def replace(match: "re.Match[str]") -> str:
+        escape = match.group(0)
+        char = chr(int(escape[1:], 16))
+        if char in misc.UNRESERVED_CHARS:
+            return char
+        return escape.upper()
+
+    return PERCENT_MATCHER.sub(replace, s)
 
 
 def remove_dot_segments(s: str) -> str:
