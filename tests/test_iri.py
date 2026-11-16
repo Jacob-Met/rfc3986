@@ -72,3 +72,11 @@ def test_encode_invalid_iri(iri):
     iri_ref = rfc3986.iri_reference(iri)
     with pytest.raises(InvalidAuthority):
         iri_ref.encode()
+
+
+@pytest.mark.parametrize("reference", ["file:///home", "foo://", "//"])
+def test_iri_with_empty_authority_roundtrips(reference):
+    parsed = rfc3986.iri_reference(reference)
+    assert parsed.authority == ""
+    assert parsed.unsplit() == reference
+    assert parsed.encode().unsplit() == reference

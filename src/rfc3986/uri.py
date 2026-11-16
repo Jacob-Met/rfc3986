@@ -97,7 +97,7 @@ class URIReference(misc.URIReferenceBase, URIMixin):
         ref = super().__new__(
             cls,
             scheme or None,
-            authority or None,
+            authority,
             path or None,
             query,
             fragment,
