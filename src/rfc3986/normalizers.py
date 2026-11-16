@@ -74,13 +74,19 @@ def normalize_host(host: str) -> str:
     return host.lower()
 
 
-def normalize_path(path: str) -> str:
-    """Normalize the path string."""
+def normalize_path(path: str, authority_present: bool = True) -> str:
+    """Normalize a path without inventing an authority component."""
     if not path:
         return path
 
     path = normalize_percent_characters(path)
-    return remove_dot_segments(path)
+    normalized = remove_dot_segments(path)
+    if not authority_present and normalized.startswith("//"):
+        # RFC 3986 Section 3.3 forbids // at the start of a path without
+        # authority: re-parsing would interpret the path as an authority.
+        # A dot segment keeps the path absolute or relative as it was.
+        return ("/." if path.startswith("/") else "./") + normalized
+    return normalized
 
 
 @t.overload

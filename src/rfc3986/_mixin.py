@@ -315,7 +315,10 @@ class URIMixin:
         # http://tools.ietf.org/html/rfc3986#page-32
         if resolving.scheme is not None:
             target = resolving.copy_with(
-                path=normalizers.normalize_path(resolving.path)
+                path=normalizers.normalize_path(
+                    resolving.path,
+                    authority_present=resolving.authority is not None,
+                )
             )
         else:
             if resolving.authority is not None:
@@ -337,10 +340,14 @@ class URIMixin:
                     )
                 else:
                     if resolving.path.startswith("/"):
-                        path = normalizers.normalize_path(resolving.path)
+                        path = normalizers.normalize_path(
+                            resolving.path,
+                            authority_present=base_uri.authority is not None,
+                        )
                     else:
                         path = normalizers.normalize_path(
-                            misc.merge_paths(base_uri, resolving.path)
+                            misc.merge_paths(base_uri, resolving.path),
+                            authority_present=base_uri.authority is not None,
                         )
                     target = resolving.copy_with(
                         scheme=base_uri.scheme,

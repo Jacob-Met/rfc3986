@@ -141,7 +141,9 @@ class URIReference(misc.URIReferenceBase, URIMixin):
             normalizers.normalize_authority(
                 (self.userinfo, self.host, self.port)
             ),
-            normalizers.normalize_path(self.path or ""),
+            normalizers.normalize_path(
+                self.path or "", authority_present=self.authority is not None
+            ),
             normalizers.normalize_query(self.query),
             normalizers.normalize_fragment(self.fragment),
             self.encoding,
