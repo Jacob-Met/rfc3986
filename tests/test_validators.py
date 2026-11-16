@@ -359,3 +359,28 @@ def test_authority_linefeed_rejection_does_not_reject_encoded_path():
     uri = rfc3986.uri_reference("https://example.com/path%0A")
     assert uri.is_valid()
     assert uri.host == "example.com"
+
+
+@pytest.mark.parametrize(
+    "parse", [rfc3986.uri_reference, rfc3986.iri_reference]
+)
+@pytest.mark.parametrize(
+    "suffix,expected_port",
+    [
+        ("", None),
+        (":", None),
+        (":0", "0"),
+        (":65535", "65535"),
+        (":65536", "65536"),
+        (":12345678901234567890", "12345678901234567890"),
+    ],
+)
+def test_uri_authority_port_follows_rfc3986_syntax(
+    parse, suffix, expected_port
+):
+    """RFC 3986 Section 3.2.3 defines port = *DIGIT, not an IP socket port."""
+    ref = parse("test://example.com" + suffix + "/resource")
+    assert ref.host == "example.com"
+    assert ref.port == expected_port
+    assert ref.is_valid()
+    validators.Validator().check_validity_of("port").validate(ref)

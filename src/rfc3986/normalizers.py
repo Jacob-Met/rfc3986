@@ -175,7 +175,8 @@ def remove_dot_segments(s: str) -> str:
         elif input_buffer in (".", ".."):
             input_buffer = ""
         else:
-            # Step 2E: move the first segment (and its leading slash) to output.
+            # Step 2E: move the first segment (and its leading slash)
+            # to output.
             segment_end = input_buffer.find(
                 "/", 1 if input_buffer.startswith("/") else 0
             )

@@ -472,23 +472,10 @@ def subauthority_component_is_valid(
     # validating the port, we can assume it's valid.
     if component == "host":
         return host_is_valid(subauthority_dict["host"])
-    elif component != "port":
-        return True
-
-    port = subauthority_dict["port"]
-
-    if port is None:
-        return True
-
-    # We know it has to have fewer than 6 digits if it exists.
-    if not (port.isdigit() and len(port) < 6):  # pragma: no cover
-        # This branch can only execute when this function is called directly
-        # with a URI reference manually constructed with an invalid port.
-        # Such a use case is unsupported, since this function isn't part of
-        # the public API.
-        return False
-
-    return 0 <= int(port) <= 65535
+    # Port syntax was already checked by authority_info(). RFC 3986
+    # Section 3.2.3 permits any number of ASCII decimal digits, including
+    # an empty port; application-specific socket ranges are separate.
+    return True
 
 
 def ensure_components_are_valid(
