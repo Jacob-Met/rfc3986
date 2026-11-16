@@ -21,6 +21,7 @@ except ImportError:
 import pytest
 
 from rfc3986 import builder
+from rfc3986 import exceptions
 from rfc3986 import uri_reference
 
 
@@ -388,3 +389,38 @@ def test_extending_query_preserves_existing_encoded_octets(
         "https://example.com"
         + ("?" + expected if expected is not None else "")
     )
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        "https://BÜCHER.de/path",
+        "http://bad host/a",
+        "http://foo]bar/path",
+        "http://foo:999999/path",
+        "https://user:pass@@host/a",
+        "http://%zz/path",
+    ],
+)
+def test_from_uri_rejects_authorities_that_cannot_be_represented(source):
+    """Silently dropping an unparseable authority changes the destination."""
+    with pytest.raises(exceptions.InvalidAuthority):
+        builder.URIBuilder.from_uri(source)
+    with pytest.raises(exceptions.InvalidAuthority):
+        builder.URIBuilder.from_uri(uri_reference(source))
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        "http://user:password@host/a",
+        "file:///home",
+        "https://host/a",
+        "https:/relative/path",
+    ],
+)
+def test_from_uri_preserves_authority_when_representable(source):
+    original = uri_reference(source)
+    rebuilt = builder.URIBuilder.from_uri(original).finalize()
+    assert rebuilt.authority == original.authority
+    assert rebuilt.unsplit() == source

@@ -97,14 +97,17 @@ class URIBuilder:
         """
         if not isinstance(reference, uri.URIReference):
             reference = uri_reference(reference)
-        host = reference.host
+        # Extract all authority components together so a malformed authority
+        # cannot silently disappear when reconstructing the URI.
+        components = reference.authority_info()
+        host = components["host"]
         if reference.authority == "" and host is None:
             host = ""
         return cls(
             scheme=reference.scheme,
-            userinfo=reference.userinfo,
+            userinfo=components["userinfo"],
             host=host,
-            port=reference.port,
+            port=components["port"],
             path=reference.path,
             query=reference.query,
             fragment=reference.fragment,
