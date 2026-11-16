@@ -323,3 +323,20 @@ def test_geturl():
         "sigmavirus24/rfc3986"
     )
     assert expected == uri
+
+
+@pytest.mark.parametrize(
+    "query, extend_with, expected",
+    [
+        ("a=", [("b", "c")], "a=&b=c"),
+        ("a=", [], "a="),
+        ("a=&b=1&a=", [("c", "")], "a=&b=1&a=&c="),
+        ("flag&x=&z=3", [("k", "v")], "flag=&x=&z=3&k=v"),
+    ],
+)
+def test_extend_query_with_preserves_blank_values(
+    query, extend_with, expected
+):
+    """Extending a URI must not discard existing flag or blank parameters."""
+    result = builder.URIBuilder(query=query).extend_query_with(extend_with)
+    assert result.query == expected
