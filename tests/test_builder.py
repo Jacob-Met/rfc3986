@@ -331,7 +331,7 @@ def test_geturl():
         ("a=", [("b", "c")], "a=&b=c"),
         ("a=", [], "a="),
         ("a=&b=1&a=", [("c", "")], "a=&b=1&a=&c="),
-        ("flag&x=&z=3", [("k", "v")], "flag=&x=&z=3&k=v"),
+        ("flag&x=&z=3", [("k", "v")], "flag&x=&z=3&k=v"),
     ],
 )
 def test_extend_query_with_preserves_blank_values(
@@ -356,4 +356,35 @@ def test_builder_without_host_does_not_invent_authority():
     assert (
         builder.URIBuilder(scheme="file", path="/home").geturl()
         == "file:/home"
+    )
+
+
+@pytest.mark.parametrize(
+    "original, extension, expected",
+    [
+        ("sig=%2f%2B%20", [("new", "hi there")], "sig=%2f%2B%20&new=hi+there"),
+        ("token=%2F&flag&x=+", [("n", "v")], "token=%2F&flag&x=+&n=v"),
+        ("a=1&&b=2", [("c", "3")], "a=1&&b=2&c=3"),
+        ("a=1&", [("x", "2")], "a=1&&x=2"),
+        ("a=%20", [], "a=%20"),
+        (None, [], None),
+        ("", [], ""),
+        (None, [("x", "y")], "x=y"),
+        ("", [("x", "y")], "x=y"),
+        ("x=1", [("z", "w")], "x=1&z=w"),
+    ],
+)
+def test_extending_query_preserves_existing_encoded_octets(
+    original, extension, expected
+):
+    """Appending parameters must not rewrite existing signed query bytes."""
+    before = builder.URIBuilder(
+        scheme="https", host="example.com", query=original
+    )
+    after = before.extend_query_with(extension)
+    assert after.query == expected
+    assert before.query == original
+    assert after.geturl() == (
+        "https://example.com"
+        + ("?" + expected if expected is not None else "")
     )

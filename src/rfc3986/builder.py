@@ -14,7 +14,6 @@
 """Module containing the logic for the URIBuilder object."""
 
 import typing as t
-from urllib.parse import parse_qsl
 from urllib.parse import urlencode
 
 from . import normalizers
@@ -328,13 +327,25 @@ class URIBuilder:
             URIBuilder(scheme=None, userinfo=None, host=None, port=None,
                     path=None, query='a=b+c&a=b+c', fragment=None)
         """
-        original_query_items = parse_qsl(
-            self.query or "", keep_blank_values=True
-        )
-        if not isinstance(query_items, list):
-            query_items = list(query_items.items())
+        added_query = urlencode(query_items)
+        if not added_query:
+            new_query = self.query
+        elif self.query:
+            # Re-encoding the original query can invalidate signed URLs and
+            # change bare flags, empty fields, or percent-escape spellings.
+            new_query = "{}&{}".format(self.query, added_query)
+        else:
+            new_query = added_query
 
-        return self.add_query_from(original_query_items + query_items)
+        return URIBuilder(
+            scheme=self.scheme,
+            userinfo=self.userinfo,
+            host=self.host,
+            port=self.port,
+            path=self.path,
+            query=new_query,
+            fragment=self.fragment,
+        )
 
     def add_query(self, query: str) -> "URIBuilder":
         """Add a pre-formated query string to the URI.
