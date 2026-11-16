@@ -122,3 +122,20 @@ def test_detect_percent_encoded_component(component, encoded_component):
 )
 def test_normalize_host(host, normalized_host):
     assert normalize_host(host) == normalized_host
+
+
+@pytest.mark.parametrize(
+    "source, expected",
+    [
+        ("foo/../baz", "/baz"),
+        ("foo/../../baz", "/baz"),
+        ("foo/bar/../../baz", "/baz"),
+        ("foo/../", "/"),
+        ("foo/..", "/"),
+        ("/a/../../", "/"),
+        ("/../", "/"),
+    ],
+)
+def test_remove_dot_segments_keeps_slash_at_root(source, expected):
+    """RFC 3986 §5.2.4 preserves the slash when '..' removes a segment."""
+    assert remove_dot_segments(source) == expected

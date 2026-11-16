@@ -139,37 +139,40 @@ def normalize_percent_characters(s: str) -> str:
 
 
 def remove_dot_segments(s: str) -> str:
-    """Remove dot segments from the string.
-
-    See also Section 5.2.4 of :rfc:`3986`.
-    """
-    # See http://tools.ietf.org/html/rfc3986#section-5.2.4 for pseudo-code
-    segments = s.split("/")  # Turn the path into a list of segments
-    output: list[str] = []  # Initialize the variable to use to store output
-
-    for segment in segments:
-        # '.' is the current directory, so ignore it, it is superfluous
-        if segment == ".":
-            continue
-        # Anything other than '..', should be appended to the output
-        elif segment != "..":
-            output.append(segment)
-        # In this case segment == '..', if we can, we should pop the last
-        # element
-        elif output:
-            output.pop()
-
-    # If the path starts with '/' and the output is empty or the first string
-    # is non-empty
-    if s.startswith("/") and (not output or output[0]):
-        output.insert(0, "")
-
-    # If the path starts with '/.' or '/..' ensure we add one more empty
-    # string to add a trailing '/'
-    if s.endswith(("/.", "/..")):
-        output.append("")
-
-    return "/".join(output)
+    """Remove dot segments using RFC 3986 Section 5.2.4's buffer algorithm."""
+    input_buffer = s
+    output_buffer = ""
+    while input_buffer:
+        if input_buffer.startswith("../"):
+            input_buffer = input_buffer[3:]
+        elif input_buffer.startswith("./"):
+            input_buffer = input_buffer[2:]
+        elif input_buffer.startswith("/./"):
+            input_buffer = input_buffer[2:]
+        elif input_buffer == "/.":
+            input_buffer = "/"
+        elif input_buffer.startswith("/../"):
+            input_buffer = input_buffer[3:]
+            output_buffer = (
+                output_buffer.rsplit("/", 1)[0] if "/" in output_buffer else ""
+            )
+        elif input_buffer == "/..":
+            input_buffer = "/"
+            output_buffer = (
+                output_buffer.rsplit("/", 1)[0] if "/" in output_buffer else ""
+            )
+        elif input_buffer in (".", ".."):
+            input_buffer = ""
+        else:
+            # Step 2E: move the first segment (and its leading slash) to output.
+            segment_end = input_buffer.find(
+                "/", 1 if input_buffer.startswith("/") else 0
+            )
+            if segment_end == -1:
+                segment_end = len(input_buffer)
+            output_buffer += input_buffer[:segment_end]
+            input_buffer = input_buffer[segment_end:]
+    return output_buffer
 
 
 @t.overload

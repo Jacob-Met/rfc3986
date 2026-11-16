@@ -33,7 +33,7 @@ def test_merge_paths_without_base_authority_or_path():
     base = URIReference(
         scheme=None, authority=None, path=None, query=None, fragment=None
     )
-    expected = "/relative"
+    expected = "relative"
     assert merge_paths(base, "relative") == expected
 
 
@@ -48,3 +48,14 @@ def test_merge_paths_with_base_authority_without_path():
     )
     expected = "/relative"
     assert merge_paths(base, "relative") == expected
+
+
+def test_merge_paths_with_rootless_base_path():
+    base = URIReference.from_string("scheme:foo")
+    assert merge_paths(base, "bar") == "bar"
+    assert merge_paths(base, "../bar") == "../bar"
+
+
+def test_merge_paths_without_authority_or_base_path_is_rootless():
+    base = URIReference.from_string("scheme:")
+    assert merge_paths(base, "bar") == "bar"

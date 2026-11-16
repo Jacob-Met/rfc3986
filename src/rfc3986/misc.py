@@ -129,12 +129,11 @@ ISUBAUTHORITY_MATCHER = re.compile(
 # Path merger as defined in http://tools.ietf.org/html/rfc3986#section-5.2.3
 def merge_paths(base_uri: URIReferenceBase, relative_path: str) -> str:
     """Merge a base URI's path with a relative URI's path."""
-    if base_uri.path is None and base_uri.authority is not None:
+    if base_uri.authority is not None and not base_uri.path:
         return "/" + relative_path
-    else:
-        path = base_uri.path or ""
-        index = path.rfind("/")
-        return path[:index] + "/" + relative_path
+    path = base_uri.path or ""
+    index = path.rfind("/")
+    return path[: index + 1] + relative_path
 
 
 UseExisting: t.Final[t.Any] = object()
