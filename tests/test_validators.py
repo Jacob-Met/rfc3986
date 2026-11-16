@@ -298,3 +298,40 @@ def test_validating_rfc_4007_ipv6_zone_ids():
     assert uri.host == "[::1%25eth0]"
 
     validators.Validator().check_validity_of("host").validate(uri)
+
+
+@pytest.mark.parametrize(
+    "reference",
+    [".://", ":", "1:a", "a%3Ab:b"],
+)
+def test_modern_validator_rejects_colon_in_first_schemeless_path_segment(
+    reference,
+):
+    validator = validators.Validator().check_validity_of("path")
+    with pytest.raises(exceptions.InvalidComponentsError):
+        validator.validate(rfc3986.uri_reference(reference))
+
+
+def test_modern_validator_requires_absolute_path_when_authority_exists():
+    validator = validators.Validator().check_validity_of("path")
+    invalid = rfc3986.uri.URIReference("foo", "host", "relative", None, None)
+    with pytest.raises(exceptions.InvalidComponentsError):
+        validator.validate(invalid)
+
+
+def test_standalone_path_validation_keeps_generic_component_semantics():
+    assert validators.path_is_valid("a:b") is True
+    assert validators.path_is_valid("a:b", require=True) is True
+    assert (
+        validators.path_is_valid(
+            "./a:b", reference=rfc3986.uri_reference("./a:b")
+        )
+        is True
+    )
+    assert (
+        validators.path_is_valid(
+            "a:b",
+            reference=rfc3986.uri.URIReference(None, None, "a:b", None, None),
+        )
+        is False
+    )

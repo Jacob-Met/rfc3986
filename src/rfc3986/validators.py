@@ -356,19 +356,26 @@ def scheme_is_valid(scheme: t.Optional[str], require: bool = False) -> bool:
     return is_valid(scheme, misc.SCHEME_MATCHER, require)
 
 
-def path_is_valid(path: t.Optional[str], require: bool = False) -> bool:
-    """Determine if the path component is valid.
+def path_is_valid(
+    path: t.Optional[str],
+    require: bool = False,
+    *,
+    reference: t.Optional["uri.URIReference"] = None,
+) -> bool:
+    """Validate path syntax, including RFC 3986 Section 3.3 URI context.
 
-    :param str path:
-        The path string to validate.
-    :param bool require:
-        (optional) Set to ``True`` to require the presence of a path.
-    :returns:
-        ``True`` if the path is valid. ``False`` otherwise.
-    :rtype:
-        bool
+    Standalone validation checks component syntax. Supplying a reference also
+    checks the allowed path form for that reference's scheme and authority.
     """
-    return is_valid(path, misc.PATH_MATCHER, require)
+    if not is_valid(path, misc.PATH_MATCHER, require):
+        return False
+    if reference is None or path is None:
+        return True
+    if reference.authority is not None:
+        return not path or path.startswith("/")
+    if path.startswith("//"):
+        return False
+    return reference.scheme is not None or ":" not in path.split("/", 1)[0]
 
 
 def query_is_valid(query: t.Optional[str], require: bool = False) -> bool:
@@ -469,8 +476,11 @@ def ensure_components_are_valid(
             # https://bitbucket.org/ned/coveragepy/issues/198/continue-marked-as-not-covered
             continue  # nocov: Python 2.7, 3.3, 3.4
 
-        validator = _COMPONENT_VALIDATORS[component]
-        if not validator(getattr(uri, component)):
+        if component == "path":
+            valid = path_is_valid(uri.path, reference=uri)
+        else:
+            valid = _COMPONENT_VALIDATORS[component](getattr(uri, component))
+        if not valid:
             invalid_components.add(component)
 
     if invalid_components:

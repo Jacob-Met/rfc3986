@@ -473,3 +473,34 @@ def test_resolve_rootless_base_paths_follow_rfc_3986(base, relative, expected):
     )
     assert actual.unsplit() == expected
     assert URIReference.from_string(actual.unsplit()) == actual
+
+
+@pytest.mark.parametrize(
+    "reference",
+    [".://", ".://abc", ":", "1:a", "a%3Ab:b", "_a:a"],
+)
+def test_relative_references_disallow_colon_in_first_segment(reference):
+    """RFC 3986 Section 3.3: a schemeless path uses path-noscheme."""
+    parsed = URIReference.from_string(reference)
+    assert parsed.scheme is None
+    assert parsed.authority is None
+    assert parsed.is_valid() is False
+    assert parsed.path_is_valid() is False
+
+
+@pytest.mark.parametrize(
+    "reference",
+    ["./a:b", "a/b:c", "/a:b", "a%3Ab", "foo:bar", "foo:/bar"],
+)
+def test_colons_are_permitted_in_other_path_positions(reference):
+    assert URIReference.from_string(reference).is_valid() is True
+
+
+def test_uri_paths_reject_authority_and_path_shape_mismatch():
+    assert (
+        URIReference(None, "host", "relative", None, None).is_valid() is False
+    )
+    assert URIReference("foo", None, "//evil", None, None).is_valid() is False
+    assert URIReference(None, None, "//evil", None, None).is_valid() is False
+    assert URIReference("foo", None, "foo:bar", None, None).is_valid() is True
+    assert URIReference("foo", "host", "/path", None, None).is_valid() is True
