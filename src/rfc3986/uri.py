@@ -17,6 +17,7 @@
 import typing as t
 
 from . import compat
+from . import exceptions
 from . import misc
 from . import normalizers
 from ._mixin import URIMixin
@@ -136,11 +137,22 @@ class URIReference(misc.URIReferenceBase, URIMixin):
         """
         # See http://tools.ietf.org/html/rfc3986#section-6.2.2 for logic in
         # this method.
+        authority = self.authority
+        if authority:
+            try:
+                info = self.authority_info()
+            except exceptions.InvalidAuthority:
+                # Invalid authorities cannot be normalized, but dropping
+                # them would silently change the reference's destination.
+                pass
+            else:
+                authority = normalizers.normalize_authority(
+                    (info["userinfo"], info["host"], info["port"])
+                )
+
         return URIReference(
             normalizers.normalize_scheme(self.scheme or ""),
-            normalizers.normalize_authority(
-                (self.userinfo, self.host, self.port)
-            ),
+            authority,
             normalizers.normalize_path(self.path or ""),
             normalizers.normalize_query(self.query),
             normalizers.normalize_fragment(self.fragment),

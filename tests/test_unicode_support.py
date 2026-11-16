@@ -71,3 +71,16 @@ def test_unsplit_idna_a_unicode_hostname():
 def test_strict_urlparsing():
     with pytest.raises(exceptions.InvalidAuthority):
         parseresult.ParseResult.from_string(SNOWMAN_HOST)
+
+
+@pytest.mark.parametrize(
+    "authority",
+    ["æåëý.com", "User@BÜCHER.example:8443", "bad host", "%xz"],
+)
+def test_normalizing_invalid_authority_does_not_discard_it(authority):
+    """An unrecognized authority must not silently disappear on normalize."""
+    original = uri_reference(f"https://{authority}/path?query#fragment")
+    assert not original.is_valid()
+    result = original.normalize()
+    assert result.authority == authority
+    assert result.unsplit() == f"https://{authority}/path?query#fragment"

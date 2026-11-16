@@ -172,16 +172,16 @@ class TestParseResultBytes:
             strict=False,
             lazy_normalize=False,
         )
-        assert uri.unsplit() == b"http:/path"
+        assert uri.unsplit() == b"http://" + SNOWMAN + b".com/path"
 
-    def test_eager_normalization_from_parts(self):
-        uri = pr.ParseResultBytes.from_parts(
-            scheme="http",
-            host=SNOWMAN.decode("utf-8"),
-            path="/path",
-            lazy_normalize=False,
-        )
-        assert uri.unsplit() == b"http:/path"
+    def test_eager_normalization_from_parts_rejects_invalid_host(self):
+        with pytest.raises(exceptions.InvalidAuthority):
+            pr.ParseResultBytes.from_parts(
+                scheme="http",
+                host=SNOWMAN.decode("utf-8"),
+                path="/path",
+                lazy_normalize=False,
+            )
 
 
 @pytest.mark.parametrize(
