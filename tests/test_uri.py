@@ -350,7 +350,7 @@ class TestURIReferencesResolve:
         B = URIReference.from_string(scheme_only)
         T = R.resolve_with(B)
         assert T.scheme == B.scheme.lower()
-        assert T.path == ("/" + R.path)
+        assert T.path == R.path
 
     def test_basic_uri_resolves_itself(self, basic_uri):
         R = URIReference.from_string(basic_uri)
@@ -452,3 +452,24 @@ def test_explicitly_empty_authority_roundtrips(reference):
     assert parsed.authority == ""
     assert parsed.unsplit() == reference
     assert parsed.normalize().unsplit() == reference
+
+
+@pytest.mark.parametrize(
+    "base, relative, expected",
+    [
+        ("scheme:foo/bar", "../baz", "scheme:/baz"),
+        ("scheme:foo/bar", "../../baz", "scheme:/baz"),
+        ("scheme:foo/bar", "../", "scheme:/"),
+        ("scheme:foo", "bar", "scheme:bar"),
+        ("scheme:", "bar", "scheme:bar"),
+        ("scheme:foo/bar/baz", "../../baz", "scheme:/baz"),
+        ("http://host/dir/file", "../../", "http://host/"),
+    ],
+)
+def test_resolve_rootless_base_paths_follow_rfc_3986(base, relative, expected):
+    """RFC 3986 §5.2.3–4 must hold for bases without an authority."""
+    actual = URIReference.from_string(relative).resolve_with(
+        URIReference.from_string(base)
+    )
+    assert actual.unsplit() == expected
+    assert URIReference.from_string(actual.unsplit()) == actual
