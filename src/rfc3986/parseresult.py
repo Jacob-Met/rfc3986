@@ -404,9 +404,9 @@ class ParseResultBytes(
         )
 
     @property
-    def authority(self) -> bytes:
+    def authority(self) -> t.Optional[bytes]:
         """Return the normalized authority."""
-        return self.reference.authority.encode(self.encoding)
+        return compat.to_bytes(self.reference.authority, self.encoding)
 
     def copy_with(
         self,

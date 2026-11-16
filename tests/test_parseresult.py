@@ -182,3 +182,14 @@ class TestParseResultBytes:
             lazy_normalize=False,
         )
         assert uri.unsplit() == b"http:/path"
+
+
+@pytest.mark.parametrize(
+    "reference",
+    [b"/a", b"a", b"mailto:x", b"?q", b"/path?query#fragment"],
+)
+def test_bytes_without_authority_roundtrip(reference):
+    """Non-authority references must roundtrip in bytes just like text."""
+    parsed = pr.ParseResultBytes.from_string(reference)
+    assert parsed.authority is None
+    assert parsed.unsplit() == reference
