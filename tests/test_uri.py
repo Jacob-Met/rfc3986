@@ -404,3 +404,32 @@ def test_wide_domain_bypass_check():
     ref = URIReference.from_string(url)
     assert ref.scheme == "https"
     assert ref.host == "xdavidhu.me"
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        "scheme:/..///bar",
+        "scheme:/a/..///bar",
+        "scheme:..///bar",
+        "/..///bar",
+        "..///bar",
+    ],
+)
+def test_normalize_does_not_create_authority_from_dot_segments(source):
+    """Dot removal cannot turn an authority-free path into //authority."""
+    normalized = URIReference.from_string(source).normalize()
+    reparsed = URIReference.from_string(normalized.unsplit())
+    assert reparsed.authority is None
+    assert reparsed.path == normalized.path
+    assert normalized.normalize().unsplit() == normalized.unsplit()
+
+
+def test_resolve_dot_segments_cannot_create_authority():
+    reference = URIReference.from_string("/..///bar")
+    resolved = reference.resolve_with(
+        URIReference.from_string("scheme:/dir/file")
+    )
+    reparsed = URIReference.from_string(resolved.unsplit())
+    assert reparsed.authority is None
+    assert reparsed.path == resolved.path
