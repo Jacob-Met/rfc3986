@@ -153,7 +153,9 @@ class URIReference(misc.URIReferenceBase, URIMixin):
         return URIReference(
             normalizers.normalize_scheme(self.scheme or ""),
             authority,
-            normalizers.normalize_path(self.path or ""),
+            normalizers.normalize_path(
+                self.path or "", authority_present=authority is not None
+            ),
             normalizers.normalize_query(self.query),
             normalizers.normalize_fragment(self.fragment),
             self.encoding,
