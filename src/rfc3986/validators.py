@@ -411,6 +411,36 @@ def fragment_is_valid(
     return is_valid(fragment, misc.FRAGMENT_MATCHER, require)
 
 
+def uri_is_valid(reference: "uri.URIReference", **requirements: bool) -> bool:
+    """Validate a URI reference without invoking deprecated component APIs."""
+    if not scheme_is_valid(
+        reference.scheme, requirements.get("require_scheme", False)
+    ):
+        return False
+    try:
+        authority = reference.authority_info()
+    except exceptions.InvalidAuthority:
+        return False
+    return (
+        authority_is_valid(
+            reference.authority,
+            authority["host"],
+            requirements.get("require_authority", False),
+        )
+        and path_is_valid(
+            reference.path,
+            requirements.get("require_path", False),
+            reference=reference,
+        )
+        and query_is_valid(
+            reference.query, requirements.get("require_query", False)
+        )
+        and fragment_is_valid(
+            reference.fragment, requirements.get("require_fragment", False)
+        )
+    )
+
+
 def valid_ipv4_host_address(host: str) -> bool:
     """Determine if the given host is a valid IPv4 address."""
     # If the host exists, and it might be IPv4, check each byte in the
