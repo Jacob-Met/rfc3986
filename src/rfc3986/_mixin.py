@@ -221,7 +221,7 @@ class URIMixin:
             "This method will be eventually removed.",
             DeprecationWarning,
         )
-        return validators.path_is_valid(self.path, require)
+        return validators.path_is_valid(self.path, require, reference=self)
 
     def query_is_valid(self, require: bool = False) -> bool:
         """Determine if the query component is valid.
