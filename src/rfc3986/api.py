@@ -85,7 +85,11 @@ def is_valid_uri(
     :returns: ``True`` if the URI is valid, ``False`` otherwise.
     :rtype: bool
     """
-    return URIReference.from_string(uri, encoding).is_valid(**kwargs)
+    from . import validators
+
+    return validators.uri_is_valid(
+        URIReference.from_string(uri, encoding), **kwargs
+    )
 
 
 def normalize_uri(uri: t.Union[str, bytes], encoding: str = "utf-8") -> str:

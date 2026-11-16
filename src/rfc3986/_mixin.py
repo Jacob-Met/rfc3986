@@ -146,14 +146,7 @@ class URIMixin:
             "This method will be eventually removed.",
             DeprecationWarning,
         )
-        validators = [
-            (self.scheme_is_valid, kwargs.get("require_scheme", False)),
-            (self.authority_is_valid, kwargs.get("require_authority", False)),
-            (self.path_is_valid, kwargs.get("require_path", False)),
-            (self.query_is_valid, kwargs.get("require_query", False)),
-            (self.fragment_is_valid, kwargs.get("require_fragment", False)),
-        ]
-        return all(v(r) for v, r in validators)
+        return validators.uri_is_valid(self, **kwargs)
 
     def authority_is_valid(self, require: bool = False) -> bool:
         """Determine if the authority component is valid.
