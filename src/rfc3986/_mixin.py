@@ -100,7 +100,7 @@ class URIMixin:
             authority = self.authority_info()
         except exc.InvalidAuthority:
             return None
-        return authority["port"]
+        return authority["port"] or None
 
     @property
     def userinfo(self) -> t.Optional[str]:

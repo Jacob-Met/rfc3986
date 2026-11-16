@@ -112,7 +112,7 @@ def test_encoding_ascii_iri_authority_needs_no_optional_idna(
     [
         "http://bad host/path",
         "http://foo]bar/path",
-        "http://foo:999999/a",
+        "http://foo:999999oops/a",
         "https://user@@host/a",
     ],
 )
@@ -133,3 +133,9 @@ def test_encoding_unicode_hostname_requires_idna_when_unavailable(monkeypatch):
     monkeypatch.setattr(iri_module, "idna", None)
     with pytest.raises(MissingDependencyError):
         rfc3986.iri_reference("https://bücher.de/a").encode()
+
+
+def test_encoding_iri_preserves_syntactically_valid_large_port():
+    """IRI encoding should not silently discard a valid URI destination."""
+    source = "custom://host:1234567890/resource"
+    assert rfc3986.iri_reference(source).encode().unsplit() == source

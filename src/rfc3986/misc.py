@@ -118,7 +118,7 @@ ISUBAUTHORITY_MATCHER = re.compile(
     (
         "^(?:(?P<userinfo>{})@)?"  # iuserinfo
         "(?P<host>{})"  # ihost
-        ":?(?P<port>{})?$"  # port
+        "(?::(?P<port>{}))?$"  # port
     ).format(
         abnf_regexp.IUSERINFO_RE, abnf_regexp.IHOST_RE, abnf_regexp.PORT_RE
     ),

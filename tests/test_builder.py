@@ -397,7 +397,7 @@ def test_extending_query_preserves_existing_encoded_octets(
         "https://BÜCHER.de/path",
         "http://bad host/a",
         "http://foo]bar/path",
-        "http://foo:999999/path",
+        "http://foo:999999oops/path",
         "https://user:pass@@host/a",
         "http://%zz/path",
     ],
@@ -424,3 +424,9 @@ def test_from_uri_preserves_authority_when_representable(source):
     rebuilt = builder.URIBuilder.from_uri(original).finalize()
     assert rebuilt.authority == original.authority
     assert rebuilt.unsplit() == source
+
+
+def test_from_uri_preserves_syntactically_valid_large_port():
+    """Builder roundtrips RFC-valid ports even beyond socket range."""
+    source = "custom://host:1234567890/resource"
+    assert builder.URIBuilder.from_uri(source).geturl() == source
