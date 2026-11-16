@@ -118,56 +118,61 @@ class IRIReference(misc.URIReferenceBase, uri.URIMixin):
     ) -> "uri.URIReference":
         """Encode an IRIReference into a URIReference instance.
 
-        If the ``idna`` module is installed or the ``rfc3986[idna]``
+        If the ``idna`` module is installed or the ``rfc3986[idna2008]``
         extra is used then unicode characters in the IRI host
         component will be encoded with IDNA2008.
 
         :param idna_encoder:
-            Function that encodes each part of the host component
-            If not given will raise an exception if the IRI
-            contains a host component.
+            Function that encodes each part of the host component.
+            Without this function, non-ASCII hostnames require the optional
+            ``idna`` dependency; ASCII hostnames require no dependency.
         :rtype: uri.URIReference
         :returns: A URI reference
         """
         authority = self.authority
         if authority:
+            # An invalid authority must not silently become an empty host.
+            # This also gives us one validated set of host/userinfo/port data.
+            components = self.authority_info()
+            source_authority = authority
             if idna_encoder is None:
-                if idna is None:  # pragma: no cover
-                    raise exceptions.MissingDependencyError(
-                        "Could not import the 'idna' module "
-                        "and the IRI hostname requires encoding"
-                    )
 
                 def idna_encoder(name: str) -> t.Union[str, bytes]:
-                    assert idna  # Known to not be None at this point.
-
-                    if any(ord(c) > 128 for c in name):
+                    if any(ord(c) > 127 for c in name):
+                        if idna is None:
+                            raise exceptions.MissingDependencyError(
+                                "Could not import the 'idna' module "
+                                "and the IRI hostname requires encoding"
+                            )
                         try:
                             return idna.encode(
                                 name.lower(), strict=True, std3_rules=True
                             )
                         except idna.IDNAError:
-                            raise exceptions.InvalidAuthority(self.authority)
+                            raise exceptions.InvalidAuthority(source_authority)
                     return name
 
             authority = ""
-            if self.host:
+            host = components["host"]
+            if host:
                 authority = ".".join(
                     [
                         compat.to_str(idna_encoder(part))
-                        for part in self.host.split(".")
+                        for part in host.split(".")
                     ]
                 )
 
-            if self.userinfo is not None:
+            userinfo = components["userinfo"]
+            if userinfo is not None:
                 authority = (
-                    normalizers.encode_component(self.userinfo, self.encoding)
+                    normalizers.encode_component(userinfo, self.encoding)
                     + "@"
                     + authority
                 )
 
-            if self.port is not None:
-                authority += ":" + str(self.port)
+            port = components["port"]
+            if port is not None:
+                authority += ":" + str(port)
 
         return uri.URIReference(
             self.scheme,

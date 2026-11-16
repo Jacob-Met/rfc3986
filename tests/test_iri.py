@@ -80,3 +80,56 @@ def test_iri_with_empty_authority_roundtrips(reference):
     assert parsed.authority == ""
     assert parsed.unsplit() == reference
     assert parsed.encode().unsplit() == reference
+
+
+@pytest.mark.parametrize(
+    "source, expected",
+    [
+        ("https://example.com/a", "https://example.com/a"),
+        ("https://USER@Example.COM/p", "https://USER@Example.COM/p"),
+        (
+            "http+unix://%2Ftmp%2FTEST.sock/get",
+            "http+unix://%2Ftmp%2FTEST.sock/get",
+        ),
+        (
+            "https://user:päss@host.example/a",
+            "https://user:p%C3%A4ss@host.example/a",
+        ),
+        ("http://[::1]/path", "http://[::1]/path"),
+    ],
+)
+def test_encoding_ascii_iri_authority_needs_no_optional_idna(
+    monkeypatch, source, expected
+):
+    import rfc3986.iri as iri_module
+
+    monkeypatch.setattr(iri_module, "idna", None)
+    assert rfc3986.iri_reference(source).encode().unsplit() == expected
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        "http://bad host/path",
+        "http://foo]bar/path",
+        "http://foo:999999/a",
+        "https://user@@host/a",
+    ],
+)
+def test_encoding_invalid_authority_cannot_erase_destination(
+    monkeypatch, source
+):
+    import rfc3986.iri as iri_module
+
+    monkeypatch.setattr(iri_module, "idna", None)
+    with pytest.raises(InvalidAuthority):
+        rfc3986.iri_reference(source).encode()
+
+
+def test_encoding_unicode_hostname_requires_idna_when_unavailable(monkeypatch):
+    import rfc3986.iri as iri_module
+    from rfc3986.exceptions import MissingDependencyError
+
+    monkeypatch.setattr(iri_module, "idna", None)
+    with pytest.raises(MissingDependencyError):
+        rfc3986.iri_reference("https://bücher.de/a").encode()
